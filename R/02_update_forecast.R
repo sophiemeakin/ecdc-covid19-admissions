@@ -82,7 +82,7 @@ tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
 
 file_name <- paste0("timeseries_ensemble_", fdate, ".csv")
 write_csv(tsensemble_summary,
-          file = here::here("forecasts", "timeseries_ensemble", file_name))
+          file = here::here("data", "forecasts", "timeseries_ensemble", file_name))
 
 
 # ARIMA regression --------------------------------------------------------
@@ -101,50 +101,7 @@ arimareg_summary <- forecast_summary(samples = arimareg_samples,
                                                      0.975, 0.99)) %>%
   mutate(date_horizon = forecast_from + (7*horizon))
 
-
-
-
-# Case-convolution --------------------------------------------------------
-
-
-
-
-
-# Vis ---------------------------------------------------------------------
-
-plot_summary <- tsensemble_summary %>%
-  bind_rows(arimareg_summary) %>%
-  filter(quantile %in% c(0.05, 0.25, 0.5, 0.75, 0.95),
-         quantile_label != "upper_0") %>%
-  select(-quantile) %>%
-  pivot_wider(id_cols = -c(quantile_label, value), names_from = quantile_label)
-
-## Observed data
-g <- dat_in %>%
-  filter(date >= fdate - 8*7) %>%
-  ggplot(aes(x = date + 7, y = adm)) +
-  geom_line() +
-  facet_wrap(. ~ id, scales = "free_y") +
-  scale_x_date(breaks = seq.Date(from = fdate - 8*7,
-                                 to = fdate + 4*7,
-                                 by = "2 weeks"),
-               date_labels = "%d %b") +
-  scale_y_continuous(limits = c(0, NA)) +
-  labs(x = "Week ending",
-       y = "Week admissions",
-       col = "Model",
-       fill = "Model") +
-  theme_bw() +
-  theme(legend.position = "top")
-  
-## Add forecast data
-g +
-  geom_ribbon(data = plot_summary,
-              aes(x = date_horizon, y = lower_0,
-                  ymin = lower_90, ymax = upper_90, fill = model),
-              alpha = 0.4) + 
-  geom_point(data = plot_summary,
-             aes(x = date_horizon, y = lower_0, col = model)) +
-  geom_line(data = plot_summary,
-            aes(x = date_horizon, y = lower_0, col = model)) 
+file_name <- paste0("arimareg_", fdate, ".csv")
+write_csv(arimareg_summary,
+          file = here::here("data", "forecasts", "arima_regression", file_name))
 
