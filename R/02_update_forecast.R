@@ -99,7 +99,9 @@ arimareg_summary <- forecast_summary(samples = arimareg_samples,
                                        quantiles = c(0.01, 0.025,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
-  mutate(date_horizon = forecast_from + (7*horizon))
+  mutate(date_horizon = forecast_from + (7*horizon)) %>%
+  filter(quantile_label != "upper_0") %>%
+  select(quantile_label)
 
 file_name <- paste0("arimareg_", fdate, ".csv")
 write_csv(arimareg_summary,
