@@ -12,10 +12,10 @@ ensemble_samples <- function(dat, n.samples = 1000){
   
   samples <- round(rmetalog(metalog_dn, n = n.samples, term = 5))
   
-  out <- tibble(forecast_date = unique(quantiles_in$forecast_date),
-                target = unique(quantiles_in$target),
-                target_end_date = .y,
-                location = .x,
+  out <- tibble(forecast_date = unique(dat$forecast_date),
+                target = unique(dat$target),
+                target_end_date = target_int,
+                location = id_int,
                 sample = 1:n.samples,
                 value = samples)
   
