@@ -22,13 +22,8 @@ devtools::source_url("https://raw.githubusercontent.com/seabbs/regional-secondar
 
 raw_dat <- load_data()
 
-fcast_ids <- raw_dat %>%
-  filter(week >= fdate - 12*7,
-         week < fdate) %>%
-  group_by(location) %>%
-  summarise(all_adm = sum(adm)) %>%
-  filter(!is.na(all_adm)) %>%
-  pull(location)
+fcast_ids <- get_forecast_ids(dat = raw_dat,
+                              forecast_date = fdate)
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
                                        locs = fcast_ids)
@@ -62,6 +57,19 @@ dat <- raw_dat %>%
   filter(week < fdate) %>%
   select(id = location, date = week, cases, adm) %>%
   bind_rows(forecast_point)
+
+
+# Vis hub-ensemble case forecast ------------------------------------------
+
+g_case <- plot_ensemble(dat_obs = raw_dat,
+                        dat_for = raw_case_forecast$raw_forecast,
+                        regions = fcast_ids,
+                        forecast_date = fdate)
+
+ggsave(plot = g_case,
+       filename = here::here("data", "figures", "forecast_case_ensemble.pdf"),
+       height = 9, width = 14, units = "in", dpi = 500)
+
 
 # Time series ensemble ----------------------------------------------------
 
@@ -157,3 +165,15 @@ convolution_summary <- forecast_summary(samples = convolution_samples,
 file_name <- paste0("convolution_", fdate, ".csv")
 write_csv(convolution_summary,
           file = here::here("data", "forecasts", "case_convolution", file_name))
+
+
+# Vis model forecasts -----------------------------------------------------
+
+g_admissions <- plot_forecasts(dat_obs = raw_dat,
+                               forecast_date = fdate,
+                               regions = fcast_ids)
+
+ggsave(plot = g_admissions,
+       filename = here::here("data", "figures", "forecast_admissions.pdf"),
+       height = 9, width = 14, units = "in", dpi = 500)
+
