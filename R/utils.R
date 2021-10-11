@@ -1,3 +1,20 @@
+
+# Get vector of country IDs that we will make admissions forecasts for
+get_forecast_ids <- function(dat, forecast_date) {
+  
+  out <- raw_dat %>%
+    filter(week >= fdate - 12*7,
+           week < fdate) %>%
+    group_by(location) %>%
+    summarise(all_adm = sum(adm)) %>%
+    filter(!is.na(all_adm)) %>%
+    pull(location)
+  
+  return(out)
+  
+}
+
+# Get samples from hub-ensemble quantile forecast
 ensemble_samples <- function(dat, n.samples = 1000){
   
   id_int <- unique(dat$location)
