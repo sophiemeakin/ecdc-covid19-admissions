@@ -6,9 +6,10 @@ library(rmetalog)
 
 source(here::here("R", "load_data_fns.R"))
 source(here::here("R", "forecast_fns.R"))
+source(here::here("R", "utils.R"))
 
 # Forecast date (a Sunday) - the last day of observed data
-fdate <- as.Date("2021-09-25")
+fdate <- as.Date("2021-09-11")
 
 
 # Load data ---------------------------------------------------------------
@@ -32,7 +33,7 @@ raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
 forecast_point <- raw_case_forecast$point_forecast %>%
   mutate(forecast_date = fdate,
          horizon = as.numeric(substr(target, 1, 1)),
-         date = forecast_date + 1 + 7*(horizon - 1)) %>%
+         date = target_end_date - 6) %>%
   select(id = location, date, cases = value)
 
 
@@ -46,7 +47,7 @@ forecast_samples <- map2_df(.x = grid$id,
                                 filter(location == .x,
                                        target_end_date == .y)
                               
-                              out <- ensemble_samples(dat = dat_in, )
+                              out <- ensemble_samples(dat = dat_in)
                               
                             }) %>%
   bind_rows()
@@ -78,7 +79,7 @@ tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
                                                      0.975, 0.99)) %>%
   mutate(date_horizon = forecast_from + (7*horizon)) %>%
   filter(quantile_label != "upper_0") %>%
-  select(quantile_label)
+  select(-quantile_label)
 
 file_name <- paste0("timeseries_ensemble_", fdate, ".csv")
 write_csv(tsensemble_summary,
@@ -101,9 +102,52 @@ arimareg_summary <- forecast_summary(samples = arimareg_samples,
                                                      0.975, 0.99)) %>%
   mutate(date_horizon = forecast_from + (7*horizon)) %>%
   filter(quantile_label != "upper_0") %>%
-  select(quantile_label)
+  select(-quantile_label)
 
 file_name <- paste0("arimareg_", fdate, ".csv")
 write_csv(arimareg_summary,
           file = here::here("data", "forecasts", "arima_regression", file_name))
 
+
+# Case-convolution --------------------------------------------------------
+
+dat_obs <- dat_in %>%
+  select(region = id, date, primary = cases, secondary = adm) %>%
+  filter(date >= fdate - 12*7,
+         date < fdate)
+
+dat_for <- forecast_samples %>%
+  select(region = location, date = target_end_date, sample, cases = value)
+
+convolution_forecast <- regional_secondary(reports = data.table::data.table(dat_obs),
+                                           case_forecast = data.table::data.table(dat_for),
+                                           secondary = secondary_opts(type = "incidence"),
+                                           delays = delay_opts(list(
+                                             mean = 1, mean_sd = 0.5,
+                                             sd = 0.5, sd_sd = 0.25, max = 4
+                                           )),
+                                           obs = EpiNow2::obs_opts(week_effect = FALSE,
+                                                                   scale = list(mean = 0.2, sd = 0.1)),
+                                           burn_in = 2,
+                                           control = list(adapt_delta = 0.99, max_treedepth = 15),
+                                           return_fit = FALSE,
+                                           return_plots = FALSE,
+                                           verbose = TRUE)
+# Model samples and summary
+convolution_samples <- convolution_forecast$samples %>%
+  dplyr::filter(date > fdate) %>%
+  dplyr::mutate(forecast_from = fdate,
+                horizon = as.integer(date - forecast_from),
+                model = "Case-convolution") %>%
+  dplyr::select(id = region, sample, horizon, value, forecast_from, model)
+convolution_summary <- forecast_summary(samples = convolution_samples,
+                                              quantiles = c(0.01, 0.025,
+                                                            seq(from = 0.05, to = 0.95, by = 0.05),
+                                                            0.975, 0.99)) %>%
+  filter(quantile_label != "upper_0") %>%
+  select(-quantile_label)
+
+
+file_name <- paste0("convolution_", fdate, ".csv")
+write_csv(convolution_summary,
+          file = here::here("data", "forecasts", "case_convolution", file_name))
