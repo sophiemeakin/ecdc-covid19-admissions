@@ -6,8 +6,8 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
   # Add observed data
   plot_obs <- dat_obs %>%
     filter(location %in% regions,
-           week >= forecast_date - 8*7,
-           week <= forecast_date)
+           week >= as.Date(forecast_date) - 8*7,
+           week <= as.Date(forecast_date))
   g <- plot_obs %>%
     ggplot(aes(x = week, y = cases)) +
     geom_line() +
@@ -15,6 +15,7 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
     scale_y_continuous(limits = c(0, NA)) +
     labs(x = "Week ending",
          y = "Week cases",
+         title = forecast_date,
          col = "Model",
          fill = "Model") +
     theme_bw() +
@@ -64,6 +65,7 @@ plot_forecasts <- function(dat_obs, forecast_date, regions) {
     scale_y_continuous(limits = c(0, NA)) +
     labs(x = "Week ending",
          y = "Week admissions",
+         title = forecast_date,
          col = "Model",
          fill = "Model") +
     theme_bw() +
