@@ -54,13 +54,22 @@ load_ecdc_hosps <- function(weekly = TRUE){
 
 # Load raw data -----------------------------------------------------------
 
-load_data <- function(...){
+load_data <- function(weekly = TRUE){
   
-  case_data <- load_jhu_cases()
-  adm_data <- load_ecdc_hosps()
+  case_data <- load_jhu_cases(weekly = weekly)
+  adm_data <- load_ecdc_hosps(weekly = weekly)
   
-  out <- case_data %>%
-    left_join(adm_data, by = c("location", "location_name", "week"))
+  if(weekly){
+    
+    out <- case_data %>%
+      left_join(adm_data, by = c("location", "location_name", "week"))
+    
+  } else {
+    
+    out <- case_data %>%
+      left_join(adm_data, by = c("location", "location_name", "date"))
+    
+  }
   
   return(out)
   
