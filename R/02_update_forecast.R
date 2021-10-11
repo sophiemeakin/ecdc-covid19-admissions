@@ -1,15 +1,21 @@
 
+# Date --------------------------------------------------------------------
+
+# a Saturday - the last day of observed data
+fdate <- as.Date("2021-10-09")
+
+
 # Set up ------------------------------------------------------------------
 
 library(tidyverse)
 library(rmetalog)
 
 source(here::here("R", "load_data_fns.R"))
-source(here::here("R", "forecast_fns.R"))
 source(here::here("R", "utils.R"))
 
-# Forecast date (a Sunday) - the last day of observed data
-fdate <- as.Date("2021-09-11")
+# Using functions from covid19-hospital-activity (Trust-level admissions forecasts)
+devtools::source_url("https://raw.githubusercontent.com/epiforecasts/covid19-hospital-activity/main/R/forecast_fns.R")
+devtools::source_url("https://raw.githubusercontent.com/seabbs/regional-secondary/master/regional-secondary.R")
 
 
 # Load data ---------------------------------------------------------------
