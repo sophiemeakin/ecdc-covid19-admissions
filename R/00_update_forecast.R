@@ -11,6 +11,7 @@ library(tidyverse)
 library(rmetalog)
 
 source(here::here("R", "load_data_fns.R"))
+source(here::here("R", "plot_fns.R"))
 source(here::here("R", "utils.R"))
 
 # Using functions from covid19-hospital-activity (Trust-level admissions forecasts)
