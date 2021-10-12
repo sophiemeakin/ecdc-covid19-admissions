@@ -7,11 +7,16 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
   plot_obs <- dat_obs %>%
     filter(location %in% regions,
            week >= as.Date(forecast_date) - 8*7,
-           week <= as.Date(forecast_date))
+           week <= as.Date(forecast_date)) %>%
+    mutate(week = week + 6)
   g <- plot_obs %>%
     ggplot(aes(x = week, y = cases)) +
     geom_line() +
     facet_wrap(. ~ location, scales = "free_y") +
+    scale_x_date(breaks = seq.Date(from = forecast_date - 8*7,
+                                   to = forecast_date + 4*7,
+                                   by = "2 weeks"),
+                 date_labels = "%d %b") +
     scale_y_continuous(limits = c(0, NA)) +
     labs(x = "Week ending",
          y = "Week cases",
@@ -29,15 +34,15 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
     pivot_wider(id_cols = -c(quantile, value), names_from = quantile)
   out <- g + 
     geom_ribbon(data = plot_forecast,
-                aes(x = target_end_date - 6, y = q0.5, ymin = q0.05, ymax = q0.95),
+                aes(x = target_end_date, y = q0.5, ymin = q0.05, ymax = q0.95),
                 fill = "grey50", alpha = 0.4) +
     geom_ribbon(data = plot_forecast,
-                aes(x = target_end_date - 6, y = q0.5, ymin = q0.25, ymax = q0.75),
+                aes(x = target_end_date, y = q0.5, ymin = q0.25, ymax = q0.75),
                 fill = "grey50", alpha = 0.4) +
     geom_point(data = plot_forecast,
-               aes(x = target_end_date - 6, y = q0.5)) + 
+               aes(x = target_end_date, y = q0.5)) + 
     geom_line(data = plot_forecast,
-              aes(x = target_end_date - 6, y = q0.5))
+              aes(x = target_end_date, y = q0.5))
   
   return(out)
   
@@ -50,16 +55,17 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
 plot_forecasts <- function(dat_obs, forecast_date, regions) {
   
   # Add observed data
-  plot_obs <- raw_dat %>%
+  plot_obs <- dat_obs %>%
     filter(location %in% regions,
            week >= as.Date(forecast_date) - 8*7,
-           week < as.Date(forecast_date))
+           week < as.Date(forecast_date)) %>%
+    mutate(week = week + 6)
   g <- plot_obs %>%
     ggplot(aes(x = week, y = adm)) +
     geom_line() +
     facet_wrap(. ~ location, scales = "free_y") +
-    scale_x_date(breaks = seq.Date(from = fdate - 8*7,
-                                   to = fdate + 4*7,
+    scale_x_date(breaks = seq.Date(from = forecast_date - 8*7,
+                                   to = forecast_date + 4*7,
                                    by = "2 weeks"),
                  date_labels = "%d %b") +
     scale_y_continuous(limits = c(0, NA)) +
