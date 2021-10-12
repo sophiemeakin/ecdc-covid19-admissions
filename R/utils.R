@@ -2,7 +2,7 @@
 # Get vector of country IDs that we will make admissions forecasts for
 get_forecast_ids <- function(dat, forecast_date) {
   
-  out <- raw_dat %>%
+  out <- dat %>%
     filter(week >= fdate - 12*7,
            week < fdate) %>%
     group_by(location) %>%
