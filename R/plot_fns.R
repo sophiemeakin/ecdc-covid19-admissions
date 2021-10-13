@@ -78,13 +78,13 @@ plot_forecasts <- function(dat_obs, forecast_date, regions) {
     theme(legend.position = "top")
   
   # Add forecasts
-  forecast_files <- list.files(path = here::here("data", "forecasts"), recursive = TRUE)
+  forecast_files <- list.files(path = here::here("data", "forecasts-raw"), recursive = TRUE)
   plot_files <- forecast_files[grepl(forecast_date, forecast_files)]
   
   dat_forecast <- purrr::map_df(.x = plot_files,
                                 .f = ~ {
                                   
-                                  out <- read_csv(file = here::here("data", "forecasts", .x))
+                                  out <- read_csv(file = here::here("data", "forecasts-raw", .x))
                                   
                                 }) %>%
     bind_rows() %>%
