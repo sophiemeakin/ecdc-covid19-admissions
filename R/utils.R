@@ -3,10 +3,10 @@
 get_forecast_ids <- function(dat, forecast_date) {
   
   out <- dat %>%
-    filter(week >= fdate - 12*7,
-           week < fdate) %>%
+    filter(week >= forecast_date - 9*7,
+           week < forecast_date) %>%
     group_by(location) %>%
-    summarise(all_adm = sum(adm)) %>%
+    summarise(all_adm = sum(adm)) %>% 
     filter(!is.na(all_adm)) %>%
     pull(location)
   
