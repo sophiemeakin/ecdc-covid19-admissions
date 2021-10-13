@@ -73,7 +73,7 @@ g_case <- plot_ensemble(dat_obs = raw_dat,
                         forecast_date = fdate)
 
 ggsave(plot = g_case,
-       filename = here::here("data", "figures", "forecast_case_ensemble.pdf"),
+       filename = here::here("data", "figures", "current_case_forecast.pdf"),
        height = 9, width = 14, units = "in", dpi = 500)
 
 
@@ -185,6 +185,6 @@ g_admissions <- plot_forecasts(dat_obs = raw_dat,
                                regions = fcast_ids)
 
 ggsave(plot = g_admissions,
-       filename = here::here("data", "figures", "forecast_admissions.pdf"),
+       filename = here::here("data", "figures", "current_admissions_forecast.pdf"),
        height = 9, width = 14, units = "in", dpi = 500)
 
