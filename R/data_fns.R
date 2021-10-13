@@ -1,10 +1,33 @@
 
 # Load case data ----------------------------------------------------------
 
-load_jhu_cases <- function(weekly = TRUE){
+load_jhu_cases <- function(weekly = TRUE, end_date){
   
-  out <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/JHU/truth_JHU-Incident%20Cases.csv") %>%
+  dat_raw <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/JHU/truth_JHU-Incident%20Cases.csv") %>%
     rename(cases = value)
+  
+  min_max_date <- dat_raw %>%
+    group_by(location) %>%
+    filter(date == max(date)) %>%
+    ungroup() %>%
+    filter(date == min(date)) %>%
+    pull(date) %>%
+    unique()
+  
+  if(as.Date(end_date) < max(dat_raw$date)) {
+    end_date <- max(dat_raw$date)
+  }
+  
+  out <- dat_raw %>%
+    filter(date <= end_date) %>%
+    complete(nesting(location, location_name),
+             date = seq.Date(from = min_max_date, to = as.Date(end_date), by = "day")) %>%
+    arrange(location, date) %>%
+    group_by(location) %>%
+    mutate(cases_lag = lag(cases, 7),
+           cases = ifelse(is.na(cases), cases_lag, cases)) %>%
+    ungroup() %>%
+    select(-cases_lag)
   
   if(weekly){
     
@@ -13,7 +36,7 @@ load_jhu_cases <- function(weekly = TRUE){
              week = as.Date(week)) %>%
       group_by(location, location_name, week) %>%
       dplyr::summarise(n = n(),
-                       cases = sum(cases, na.rm = TRUE),
+                       cases = sum(cases),
                        .groups = "drop") %>%
       filter(n == 7) %>%
       select(-n)
@@ -28,10 +51,33 @@ load_jhu_cases <- function(weekly = TRUE){
 
 # Load admissions data ----------------------------------------------------
 
-load_ecdc_hosps <- function(weekly = TRUE){
+load_ecdc_hosps <- function(weekly = TRUE, end_date){
   
-  out <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/ECDC/truth_ECDC-Incident%20Hospitalizations.csv") %>%
+  dat_raw <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/ECDC/truth_ECDC-Incident%20Hospitalizations.csv") %>%
     rename(adm = value)
+  
+  min_max_date <- dat_raw %>%
+    group_by(location) %>%
+    filter(date == max(date)) %>%
+    ungroup() %>%
+    filter(date == min(date)) %>%
+    pull(date) %>%
+    unique()
+  
+  if(as.Date(end_date) < max(dat_raw$date)) {
+    end_date <- max(dat_raw$date)
+  }
+  
+  out <- dat_raw %>%
+    filter(date <= end_date) %>%
+    complete(nesting(location, location_name),
+             date = seq.Date(from = min_max_date, to = as.Date(end_date), by = "day")) %>%
+    arrange(location, date) %>% 
+    group_by(location) %>%
+    mutate(adm_lag = lag(adm, 7),
+           adm = ifelse(is.na(adm), adm_lag, adm)) %>%
+    ungroup() %>%
+    select(-adm_lag)
   
   if(weekly){
     
@@ -40,7 +86,7 @@ load_ecdc_hosps <- function(weekly = TRUE){
              week = as.Date(week)) %>%
       group_by(location, location_name, week) %>%
       dplyr::summarise(n = n(),
-                       adm = sum(adm, na.rm = TRUE),
+                       adm = sum(adm),
                        .groups = "drop") %>%
       filter(n == 7) %>%
       select(-n)
@@ -54,10 +100,10 @@ load_ecdc_hosps <- function(weekly = TRUE){
 
 # Load raw data -----------------------------------------------------------
 
-load_data <- function(weekly = TRUE){
+load_data <- function(weekly = TRUE, end_date){
   
-  case_data <- load_jhu_cases(weekly = weekly)
-  adm_data <- load_ecdc_hosps(weekly = weekly)
+  case_data <- load_jhu_cases(weekly = weekly, end_date = end_date)
+  adm_data <- load_ecdc_hosps(weekly = weekly, end_date = end_date)
   
   if(weekly){
     
