@@ -9,6 +9,7 @@ fdate <- as.Date("2021-10-09")
 
 library(tidyverse)
 library(rmetalog)
+library(EpiNow2)
 
 source(here::here("R", "load_data_fns.R"))
 source(here::here("R", "plot_fns.R"))
@@ -21,7 +22,7 @@ devtools::source_url("https://raw.githubusercontent.com/seabbs/regional-secondar
 
 # Load data ---------------------------------------------------------------
 
-raw_dat <- load_data()
+raw_dat <- load_data(weekly = TRUE, end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
                               forecast_date = fdate)
@@ -37,7 +38,6 @@ forecast_point <- raw_case_forecast$point_forecast %>%
          horizon = as.numeric(substr(target, 1, 1)),
          date = target_end_date - 6) %>%
   select(id = location, date, cases = value)
-
 
 grid <- expand_grid(id = unique(raw_case_forecast$raw_forecast$location),
                     target_date = unique(raw_case_forecast$raw_forecast$target_end_date))
@@ -57,7 +57,12 @@ forecast_samples <- map2_df(.x = grid$id,
 dat <- raw_dat %>%
   filter(week < fdate) %>%
   select(id = location, date = week, cases, adm) %>%
-  bind_rows(forecast_point)
+  bind_rows(forecast_point) %>%
+  filter(id %in% fcast_ids) %>%
+  group_by(id) %>%
+  mutate(date = as.Date(date),
+         cases_lag1 = lag(cases, 1),
+         cases_lag2 = lag(cases, 2))
 
 
 # Vis hub-ensemble case forecast ------------------------------------------
@@ -74,14 +79,7 @@ ggsave(plot = g_case,
 
 # Time series ensemble ----------------------------------------------------
 
-dat_in <- dat %>%
-  filter(id %in% fcast_ids) %>%
-  group_by(id) %>%
-  mutate(date = as.Date(date),
-         cases_lag1 = lag(cases, 1),
-         cases_lag2 = lag(cases, 2))
-
-tsensemble_samples <- timeseries_samples(data = dat_in,
+tsensemble_samples <- timeseries_samples(data = dat,
                                          yvar = "adm",
                                          horizon = 4,
                                          train_from = fdate - 8*7,
@@ -98,12 +96,16 @@ tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
 
 file_name <- paste0("timeseries_ensemble_", fdate, ".csv")
 write_csv(tsensemble_summary,
-          file = here::here("data", "forecasts", "timeseries_ensemble", file_name))
+          file = here::here("data", "forecasts-raw", "timeseries_ensemble", file_name))
+
+format_forecast(forecast_summary = tsensemble_summary,
+                file_name = paste0(fdate + 1, "-epiforecasts-tsensemble.csv"),
+                file_path = here::here("data", "forecasts-format"))
 
 
 # ARIMA regression --------------------------------------------------------
 
-arimareg_samples <- timeseries_samples(data = dat_in,
+arimareg_samples <- timeseries_samples(data = dat,
                                        yvar = "adm",
                                        xvars = c("cases_lag1"),
                                        horizon = 28,
@@ -121,12 +123,16 @@ arimareg_summary <- forecast_summary(samples = arimareg_samples,
 
 file_name <- paste0("arimareg_", fdate, ".csv")
 write_csv(arimareg_summary,
-          file = here::here("data", "forecasts", "arima_regression", file_name))
+          file = here::here("data", "forecasts-raw", "arima_regression", file_name))
+
+format_forecast(forecast_summary = arimareg_summary,
+                file_name = paste0(fdate + 1, "-epiforecasts-arimareg.csv"),
+                file_path = here::here("data", "forecasts-format"))
 
 
 # Case-convolution --------------------------------------------------------
 
-dat_obs <- dat_in %>%
+dat_obs <- dat %>%
   select(region = id, date, primary = cases, secondary = adm) %>%
   filter(date >= fdate - 12*7,
          date < fdate)
@@ -165,7 +171,11 @@ convolution_summary <- forecast_summary(samples = convolution_samples,
 
 file_name <- paste0("convolution_", fdate, ".csv")
 write_csv(convolution_summary,
-          file = here::here("data", "forecasts", "case_convolution", file_name))
+          file = here::here("data", "forecasts-raw", "case_convolution", file_name))
+
+format_forecast(forecast_summary = convolution_summary,
+                file_name = paste0(fdate + 1, "-epiforecasts-convolution.csv"),
+                file_path = here::here("data", "forecasts-format"))
 
 
 # Vis model forecasts -----------------------------------------------------
