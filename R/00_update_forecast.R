@@ -2,7 +2,7 @@
 # Date --------------------------------------------------------------------
 
 # a Saturday - the last day of observed data
-fdate <- as.Date("2021-10-09")
+fdate <- as.Date("2021-10-16")
 
 
 # Set up ------------------------------------------------------------------
@@ -11,7 +11,7 @@ library(tidyverse)
 library(rmetalog)
 library(EpiNow2)
 
-source(here::here("R", "load_data_fns.R"))
+source(here::here("R", "data_fns.R"))
 source(here::here("R", "plot_fns.R"))
 source(here::here("R", "utils.R"))
 
