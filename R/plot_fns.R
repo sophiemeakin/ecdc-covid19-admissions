@@ -52,7 +52,7 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
 
 # Plot model forecasts ----------------------------------------------------
 
-plot_forecasts <- function(dat_obs, forecast_date, regions) {
+plot_forecasts <- function(dat_obs, forecast_date, regions, models) {
   
   # Add observed data
   plot_obs <- dat_obs %>%
@@ -62,6 +62,7 @@ plot_forecasts <- function(dat_obs, forecast_date, regions) {
     mutate(week = week + 6)
   g <- plot_obs %>%
     ggplot(aes(x = week, y = adm)) +
+    geom_vline(xintercept = Sys.Date(), lty = 2, col = "grey50") +
     geom_line() +
     facet_wrap(. ~ location, scales = "free_y") +
     scale_x_date(breaks = seq.Date(from = forecast_date - 8*7,
@@ -71,7 +72,7 @@ plot_forecasts <- function(dat_obs, forecast_date, regions) {
     scale_y_continuous(limits = c(0, NA)) +
     labs(x = "Week ending",
          y = "Week admissions",
-         title = forecast_date,
+         title = format.Date(forecast_date, format = "%d %B %Y"),
          col = "Model",
          fill = "Model") +
     theme_bw() +
@@ -92,6 +93,13 @@ plot_forecasts <- function(dat_obs, forecast_date, regions) {
     mutate(quantile = paste0("q", quantile)) %>%
     rename(location = id) %>%
     pivot_wider(id_cols = -c(quantile, value), names_from = quantile)
+  
+  if(!missing(models)) {
+    dat_forecast <- dat_forecast %>%
+      filter(model %in% models) %>%
+      mutate(model = ordered(model, levels = models))
+  }
+  
   out <- g +
     geom_ribbon(data = dat_forecast,
                 aes(x = date_horizon, y = q0.5,
