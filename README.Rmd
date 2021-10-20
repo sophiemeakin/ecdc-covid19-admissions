@@ -1,0 +1,76 @@
+---
+title: "COVID-19 hospital admissions forecasts (ECDC hub)"
+author:
+  - "Sophie Meakin"
+date: "`r Sys.Date()`"
+output:
+  md_document:
+    variant: markdown_github
+    toc: true
+    toc_depth: 1
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(technocolour)
+source(here::here("R", "data_fns.R"))
+source(here::here("R", "plot_fns.R"))
+source(here::here("R", "utils.R"))
+
+```
+
+```{r, include = FALSE}
+
+fdate <- lubridate::floor_date(Sys.Date(), unit = "week", week_start = 7) - 1
+
+raw_dat <- load_data(weekly = TRUE, end_date = fdate)
+
+fcast_ids <- get_forecast_ids(dat = raw_dat,
+                              forecast_date = fdate)
+fcast_countries <- raw_dat %>%
+  filter(location %in% fcast_ids) %>%
+  select(contains("location")) %>%
+  unique() %>%
+  mutate(location_print = paste0(location_name, " (", location, ")"))
+
+g_admissions <- plot_forecasts(dat_obs = raw_dat,
+                               forecast_date = fdate,
+                               regions = fcast_ids,
+                               models = c(
+                                 "Time series ensemble",
+                                 "ARIMA regression",
+                                 "Case-convolution"
+                               ))
+
+```
+
+# COVID-19 hospital admissions forecasts for the ECDC Forecast Hub
+
+## Current forecasts
+
+The most recent forecasts (from `r format.Date(fdate, format = "%d %B %Y")`) cover the following locations: `r paste(fcast_countries$location_print, collapse = ", ")`.
+
+```{r current_forecast, echo = FALSE, fig.height = 9, fig.width = 14, dpi = 300}
+
+g_admissions +
+  scale_color_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2")
+
+```
+
+## Model summaries
+
+### Autoregressive time series ensemble
+
+A mean ensemble of three autoregressive time series models: ARIMA, ETS and a "naive" model (where future admissions are equal to the most-recently observed admissions). Each of the three time series models are fit independently to weekly incident admissions data. The mean-ensemble quantile forecast is made by taking the mean of the three quantile forecasts.
+
+### ARIMA regression
+
+A regression model with ARIMA errors, with 1-week lagged COVID-19 cases as a predictor. The model is fit with weekly admissions/cases data. To make forecasts of future admissions for a forecast horizon of two weeks or more, we use the [ECDC Hub ensemble case forecast](https://github.com/epiforecasts/covid19-forecast-hub-europe/tree/main/data-processed/EuroCOVIDhub-ensemble).
+
+### Case convolution
+
+A convolution of COVID-19 cases and a report-to-admission delay distribution. The model is fit with weekly admissions/cases data. To make forecasts of future admissions, we use the [ECDC Hub ensemble case forecast](https://github.com/epiforecasts/covid19-forecast-hub-europe/tree/main/data-processed/EuroCOVIDhub-ensemble).
+
