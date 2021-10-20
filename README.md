@@ -9,7 +9,7 @@ Slovenia (SI).
 
 ![](README_files/figure-markdown_github/current_forecast-1.png)
 
-## Model summaries
+## Methods
 
 ### Autoregressive time series ensemble
 

@@ -60,7 +60,7 @@ g_admissions +
 
 ```
 
-## Model summaries
+## Methods
 
 ### Autoregressive time series ensemble
 
