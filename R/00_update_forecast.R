@@ -11,14 +11,14 @@ library(tidyverse)
 library(rmetalog)
 library(EpiNow2)
 
-source(here::here("R", "data_fns.R"))
-source(here::here("R", "plot_fns.R"))
-source(here::here("R", "utils.R"))
-
 # Using functions from covid19-hospital-activity (Trust-level admissions forecasts)
 devtools::source_url("https://raw.githubusercontent.com/epiforecasts/covid19-hospital-activity/main/R/forecast_fns.R")
 devtools::source_url("https://raw.githubusercontent.com/seabbs/regional-secondary/master/regional-secondary.R")
 
+source(here::here("R", "data_fns.R"))
+source(here::here("R", "plot_fns.R"))
+source(here::here("R", "format_fns.R"))
+source(here::here("R", "utils.R"))
 
 # Load data ---------------------------------------------------------------
 
@@ -174,7 +174,7 @@ write_csv(convolution_summary,
           file = here::here("data", "forecasts-raw", "case_convolution", file_name))
 
 format_forecast(forecast_summary = convolution_summary,
-                file_name = paste0(fdate + 1, "-epiforecasts-convolution.csv"),
+                file_name = paste0(fdate + 1, "-epiforecasts-caseconv.csv"),
                 file_path = here::here("data", "forecasts-format"))
 
 
