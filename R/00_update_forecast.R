@@ -165,6 +165,7 @@ convolution_summary <- forecast_summary(samples = convolution_samples,
                                               quantiles = c(0.01, 0.025,
                                                             seq(from = 0.05, to = 0.95, by = 0.05),
                                                             0.975, 0.99)) %>%
+  mutate(horizon = horizon/7) %>%
   filter(quantile_label != "upper_0") %>%
   select(-quantile_label)
 
