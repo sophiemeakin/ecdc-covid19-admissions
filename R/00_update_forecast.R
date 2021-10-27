@@ -20,6 +20,10 @@ source(here::here("R", "plot_fns.R"))
 source(here::here("R", "format_fns.R"))
 source(here::here("R", "utils.R"))
 
+if (!dir.exists(here::here("data", "figures"))) {
+  dir.create(here::here("data", "figures"))
+}
+
 # Load data ---------------------------------------------------------------
 
 raw_dat <- load_data(weekly = TRUE, end_date = fdate)
