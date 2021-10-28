@@ -24,6 +24,9 @@ if (!dir.exists(here::here("data", "figures"))) {
   dir.create(here::here("data", "figures"))
 }
 
+unlink(here::here("data", "latest-forecasts"), recursive = TRUE)
+dir.create(here::here("data", "latest-forecasts"))
+
 # Load data ---------------------------------------------------------------
 
 raw_dat <- load_data(weekly = TRUE, end_date = fdate)
@@ -104,7 +107,7 @@ write_csv(tsensemble_summary,
 
 format_forecast(forecast_summary = tsensemble_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-tsensemble.csv"),
-                file_path = here::here("data", "forecasts-format"))
+                file_path = here::here("data", "latest-forecasts"))
 
 
 # ARIMA regression --------------------------------------------------------
@@ -131,7 +134,7 @@ write_csv(arimareg_summary,
 
 format_forecast(forecast_summary = arimareg_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-arimareg.csv"),
-                file_path = here::here("data", "forecasts-format"))
+                file_path = here::here("data", "latest-forecasts"))
 
 
 # Case-convolution --------------------------------------------------------
@@ -180,7 +183,7 @@ write_csv(convolution_summary,
 
 format_forecast(forecast_summary = convolution_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-caseconv.csv"),
-                file_path = here::here("data", "forecasts-format"))
+                file_path = here::here("data", "latest-forecasts"))
 
 
 # Vis model forecasts -----------------------------------------------------
@@ -192,4 +195,10 @@ g_admissions <- plot_forecasts(dat_obs = raw_dat,
 ggsave(plot = g_admissions,
        filename = here::here("data", "figures", "current_admissions_forecast.pdf"),
        height = 9, width = 14, units = "in", dpi = 500)
+
+file.copy(
+  Sys.glob(here::here("data", "latest-forecasts", "*")),
+  here::here("data", "forecasts-format"),
+  recursive = TRUE
+)
 
