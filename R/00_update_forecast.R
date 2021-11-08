@@ -29,13 +29,15 @@ dir.create(here::here("data", "latest-forecasts"))
 
 # Load data ---------------------------------------------------------------
 
-raw_dat <- load_data(weekly = TRUE, end_date = fdate)
+raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
-                              forecast_date = fdate)
+                              forecast_date = fdate) %>%
+  # TEMPORARY: keep only locations with no data lag
+  filter(last_rep == max(last_rep))
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
-                                       locs = fcast_ids)
+                                       locs = fcast_ids$id)
 
 
 # Reshape data ------------------------------------------------------------
@@ -65,7 +67,7 @@ dat <- raw_dat %>%
   filter(week < fdate) %>%
   select(id = location, date = week, cases, adm) %>%
   bind_rows(forecast_point) %>%
-  filter(id %in% fcast_ids) %>%
+  filter(id %in% fcast_ids$id) %>%
   group_by(id) %>%
   mutate(date = as.Date(date),
          cases_lag1 = lag(cases, 1),
@@ -76,7 +78,7 @@ dat <- raw_dat %>%
 
 g_case <- plot_ensemble(dat_obs = raw_dat,
                         dat_for = raw_case_forecast$raw_forecast,
-                        regions = fcast_ids,
+                        regions = fcast_ids$id,
                         forecast_date = fdate)
 
 ggsave(plot = g_case,
@@ -190,7 +192,7 @@ format_forecast(forecast_summary = convolution_summary,
 
 g_admissions <- plot_forecasts(dat_obs = raw_dat,
                                forecast_date = fdate,
-                               regions = fcast_ids)
+                               regions = fcast_ids$id)
 
 ggsave(plot = g_admissions,
        filename = here::here("data", "figures", "current_admissions_forecast.pdf"),
