@@ -192,7 +192,10 @@ format_forecast(forecast_summary = convolution_summary,
 
 g_admissions <- plot_forecasts(dat_obs = raw_dat,
                                forecast_date = fdate,
-                               regions = fcast_ids$id)
+                               regions = fcast_ids$id,
+                               models = c("Time series ensemble",
+                                          "ARIMA regression",
+                                          "Case-convolution"))
 
 ggsave(plot = g_admissions,
        filename = here::here("data", "figures", "current_admissions_forecast.pdf"),
