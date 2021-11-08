@@ -23,21 +23,27 @@ source(here::here("R", "utils.R"))
 
 ```{r, include = FALSE}
 
-fdate <- lubridate::floor_date(Sys.Date(), unit = "week", week_start = 7) - 1
+fdate <- lubridate::floor_date(lubridate::today(),
+                               unit = "week",
+                               week_start = 6)
 
-raw_dat <- load_data(weekly = TRUE, end_date = fdate)
+raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
-                              forecast_date = fdate)
+                              forecast_date = fdate) %>%
+  # TEMPORARY: keep only locations with no data lag
+  filter(last_rep == max(last_rep))
+
 fcast_countries <- raw_dat %>%
-  filter(location %in% fcast_ids) %>%
+  filter(location %in% fcast_ids$id) %>%
   select(contains("location")) %>%
   unique() %>%
-  mutate(location_print = paste0(location_name, " (", location, ")"))
+  mutate(location_print = paste0(location_name, " (", location, ")")) %>%
+  arrange(location_print)
 
 g_admissions <- plot_forecasts(dat_obs = raw_dat,
                                forecast_date = fdate,
-                               regions = fcast_ids,
+                               regions = fcast_ids$id,
                                models = c(
                                  "Time series ensemble",
                                  "ARIMA regression",
