@@ -2,8 +2,9 @@
 # Date --------------------------------------------------------------------
 
 # a Saturday - the last day of observed data
-fdate <- as.Date("2021-10-30")
-
+fdate <- lubridate::today()
+lubridate::wday(fdate) <- "Saturday"
+fdate <- fdate - lubridate::weeks(1L)
 
 # Set up ------------------------------------------------------------------
 
