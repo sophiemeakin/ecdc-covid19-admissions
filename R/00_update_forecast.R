@@ -2,7 +2,9 @@
 # Date --------------------------------------------------------------------
 
 # a Saturday - the last day of observed data
-fdate <- as.Date("2021-10-30")
+fdate <- lubridate::floor_date(lubridate::today(),
+                               unit = "week",
+                               week_start = 6)
 
 
 # Set up ------------------------------------------------------------------
