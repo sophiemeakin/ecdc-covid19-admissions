@@ -51,47 +51,15 @@ load_jhu_cases <- function(weekly = TRUE, end_date){
 
 # Load admissions data ----------------------------------------------------
 
-load_ecdc_hosps <- function(weekly = TRUE, end_date){
+load_ecdc_hosps <- function(){
   
   dat_raw <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/ECDC/truth_ECDC-Incident%20Hospitalizations.csv") %>%
     rename(adm = value)
   
-  min_max_date <- dat_raw %>%
-    group_by(location) %>%
-    filter(date == max(date)) %>%
-    ungroup() %>%
-    filter(date == min(date)) %>%
-    pull(date) %>%
-    unique()
-  
-  if(as.Date(end_date) < max(dat_raw$date)) {
-    end_date <- max(dat_raw$date)
-  }
-  
   out <- dat_raw %>%
-    filter(date <= end_date) %>%
-    complete(nesting(location, location_name),
-             date = seq.Date(from = min_max_date, to = as.Date(end_date), by = "day")) %>%
-    arrange(location, date) %>% 
-    group_by(location) %>%
-    mutate(adm_lag = lag(adm, 7),
-           adm = ifelse(is.na(adm), adm_lag, adm)) %>%
-    ungroup() %>%
-    select(-adm_lag)
-  
-  if(weekly){
-    
-    out <- out %>%
-      mutate(week = lubridate::floor_date(date, unit = "week", week_start = 7),
-             week = as.Date(week)) %>%
-      group_by(location, location_name, week) %>%
-      dplyr::summarise(n = n(),
-                       adm = sum(adm),
-                       .groups = "drop") %>%
-      filter(n == 7) %>%
-      select(-n)
-    
-  }
+    rename(week = date) %>%
+    mutate(week = week + 1) %>%
+    select(location_name, location, week, adm)
   
   return(out)
   
@@ -100,22 +68,13 @@ load_ecdc_hosps <- function(weekly = TRUE, end_date){
 
 # Load raw data -----------------------------------------------------------
 
-load_data <- function(weekly = TRUE, end_date){
+load_data <- function(end_date){
   
-  case_data <- load_jhu_cases(weekly = weekly, end_date = end_date)
-  adm_data <- load_ecdc_hosps(weekly = weekly, end_date = end_date)
+  case_data <- load_jhu_cases(weekly = TRUE, end_date = end_date)
+  adm_data <- load_ecdc_hosps()
   
-  if(weekly){
-    
-    out <- case_data %>%
-      left_join(adm_data, by = c("location", "location_name", "week"))
-    
-  } else {
-    
-    out <- case_data %>%
-      left_join(adm_data, by = c("location", "location_name", "date"))
-    
-  }
+  out <- case_data %>%
+    left_join(adm_data, by = c("location", "location_name", "week"))
   
   return(out)
   
