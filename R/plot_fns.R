@@ -12,7 +12,7 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
   g <- plot_obs %>%
     ggplot(aes(x = week, y = cases)) +
     geom_line() +
-    facet_wrap(. ~ location, scales = "free_y") +
+    facet_wrap(. ~ location_name, scales = "free_y") +
     scale_x_date(breaks = seq.Date(from = forecast_date - 8*7,
                                    to = forecast_date + 4*7,
                                    by = "2 weeks"),
@@ -31,7 +31,10 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
     filter(location %in% regions,
            quantile %in% c(0.05, 0.25, 0.5, 0.75, 0.95)) %>%
     mutate(quantile = paste0("q", quantile)) %>%
-    pivot_wider(id_cols = -c(quantile, value), names_from = quantile)
+    pivot_wider(id_cols = -c(quantile, value), names_from = quantile) %>%
+    left_join(plot_obs %>% select(contains("location")) %>% unique(),
+              by = "location") %>%
+    filter(!is.na(location_name))
   out <- g + 
     geom_ribbon(data = plot_forecast,
                 aes(x = target_end_date, y = q0.5, ymin = q0.05, ymax = q0.95),
@@ -64,7 +67,7 @@ plot_forecasts <- function(dat_obs, forecast_date, regions, models) {
     ggplot(aes(x = week, y = adm)) +
     geom_vline(xintercept = Sys.Date(), lty = 2, col = "grey50") +
     geom_line() +
-    facet_wrap(. ~ location, scales = "free_y") +
+    facet_wrap(. ~ location_name, scales = "free_y") +
     scale_x_date(breaks = seq.Date(from = forecast_date - 8*7,
                                    to = forecast_date + 4*7,
                                    by = "2 weeks"),
@@ -92,7 +95,10 @@ plot_forecasts <- function(dat_obs, forecast_date, regions, models) {
     filter(quantile %in% c(0.05, 0.25, 0.5, 0.75, 0.95)) %>%
     mutate(quantile = paste0("q", quantile)) %>%
     rename(location = id) %>%
-    pivot_wider(id_cols = -c(quantile, value), names_from = quantile)
+    pivot_wider(id_cols = -c(quantile, value), names_from = quantile) %>%
+    left_join(plot_obs %>% select(contains("location")) %>% unique(),
+              by = "location") %>%
+    filter(!is.na(location_name))
   
   if(!missing(models)) {
     dat_forecast <- dat_forecast %>%
@@ -108,7 +114,9 @@ plot_forecasts <- function(dat_obs, forecast_date, regions, models) {
     geom_point(data = dat_forecast,
                aes(x = date_horizon, y = q0.5, col = model)) +
     geom_line(data = dat_forecast,
-              aes(x = date_horizon, y = q0.5, col = model)) 
+              aes(x = date_horizon, y = q0.5, col = model)) +
+    scale_color_brewer(palette = "Set2") +
+    scale_fill_brewer(palette = "Set2")
   
   return(out)
   
