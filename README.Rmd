@@ -58,7 +58,7 @@ g_admissions <- plot_forecasts(dat_obs = raw_dat,
 
 The most recent forecasts (from `r format.Date(fdate, format = "%d %B %Y")`) cover the following locations: `r paste(fcast_countries$location_print, collapse = ", ")`.
 
-```{r current_forecast, echo = FALSE, fig.height = 9, fig.width = 14, dpi = 300}
+```{r current_forecast, echo = FALSE, message = FALSE, fig.height = 9, fig.width = 14, dpi = 300}
 
 g_admissions +
   scale_color_brewer(palette = "Set2") +
