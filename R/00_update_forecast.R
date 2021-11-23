@@ -35,13 +35,21 @@ raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
                               forecast_date = fdate,
-                              max_trunc = 0)
+                              max_trunc = 7)
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
                                        locs = fcast_ids$id)
 
 
 # Reshape data ------------------------------------------------------------
+
+# Dates of forecast horizons (to allow for truncated data)
+fhorizons <- seq.Date(from = fdate + 7, by = "week", length.out = 4)
+
+# Observed data
+obs_dat <- raw_dat %>%
+  filter(location %in% fcast_ids$id) %>%
+  select(id = location, date = week, cases, adm)
 
 # Forecast median (point)
 forecast_point <- raw_case_forecast$point_forecast %>%
@@ -64,14 +72,12 @@ forecast_samples <- map2_df(.x = grid$id,
   bind_rows() %>%
   select(id = location, date = target_end_date, sample, cases = value)
 
-dat <- raw_dat %>%
-  select(id = location, date = week, cases, adm) %>%
+# Data for ARIMA models 
+dat <- obs_dat %>%
   bind_rows(forecast_point) %>%
-  filter(id %in% fcast_ids$id) %>%
   group_by(id) %>%
   mutate(date = as.Date(date),
-         cases_lag1 = lag(cases, 1),
-         cases_lag2 = lag(cases, 2))
+         cases_lag1 = lag(cases, 1))
 
 
 # Vis hub-ensemble case forecast ------------------------------------------
@@ -88,19 +94,35 @@ ggsave(plot = g_case,
 
 # Time series ensemble ----------------------------------------------------
 
-tsensemble_samples <- timeseries_samples(data = dat,
-                                         yvar = "adm",
-                                         horizon = 4,
-                                         train_from = fdate - 8*7,
-                                         forecast_from = fdate,
-                                         models = "aez") %>%
+tsensemble_samples <- purrr::map_df(.x = sort(unique(fcast_ids$trunc)),
+              .f = ~ {
+                
+                dat_int <- dat %>%
+                  filter(id %in% fcast_ids$id[which(fcast_ids$trunc == .x)])
+                
+                fdate_int <- unique(fcast_ids$last_rep[which(fcast_ids$trunc == .x)])
+                
+                out_samples <- timeseries_samples(data = dat_int,
+                                                  yvar = "adm",
+                                                  horizon = 4 + .x/7,
+                                                  train_from = fdate_int - 8*7,
+                                                  forecast_from = fdate_int,
+                                                  models = "aez")
+                
+                return(out_samples)
+                
+              }) %>%
+  bind_rows() %>%
   mutate(model = "Time series ensemble")
+
 tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
                                        quantiles = c(0.01, 0.025,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
-  mutate(date_horizon = forecast_from + (7*horizon)) %>%
-  filter(quantile_label != "upper_0") %>%
+  mutate(date_horizon = forecast_from + (7*horizon),
+         horizon = as.numeric(date_horizon - fdate)/7) %>%
+  filter(date_horizon %in% fhorizons,
+         quantile_label != "upper_0") %>%
   select(-quantile_label)
 
 file_name <- paste0("timeseries_ensemble_", fdate, ".csv")
@@ -114,20 +136,36 @@ format_forecast(forecast_summary = tsensemble_summary,
 
 # ARIMA regression --------------------------------------------------------
 
-arimareg_samples <- timeseries_samples(data = dat,
-                                       yvar = "adm",
-                                       xvars = c("cases_lag1"),
-                                       horizon = 28,
-                                       train_from = fdate - 8*7,
-                                       forecast_from = fdate,
-                                       models = "a") %>%
+arimareg_samples <- purrr::map_df(.x = sort(unique(fcast_ids$trunc)),
+              .f = ~ {
+                
+                dat_int <- dat %>%
+                  filter(id %in% fcast_ids$id[which(fcast_ids$trunc == .x)])
+                
+                fdate_int <- unique(fcast_ids$last_rep[which(fcast_ids$trunc == .x)])
+                
+                out_samples <- timeseries_samples(data = dat_int,
+                                                  yvar = "adm",
+                                                  xvars = c("cases_lag1"),
+                                                  horizon = 28 + .x,
+                                                  train_from = fdate_int - 8*7,
+                                                  forecast_from = fdate_int,
+                                                  models = "a")
+                
+                return(out_samples)
+                
+              }) %>%
+  bind_rows() %>%
   mutate(model = "ARIMA regression")
+  
 arimareg_summary <- forecast_summary(samples = arimareg_samples,
                                        quantiles = c(0.01, 0.025,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
-  mutate(date_horizon = forecast_from + (7*horizon)) %>%
-  filter(quantile_label != "upper_0") %>%
+  mutate(date_horizon = forecast_from + (7*horizon),
+         horizon = as.numeric(date_horizon - fdate)/7) %>%
+  filter(date_horizon %in% fhorizons,
+         quantile_label != "upper_0") %>%
   select(-quantile_label)
 
 file_name <- paste0("arimareg_", fdate, ".csv")
@@ -147,7 +185,7 @@ dat_obs <- dat %>%
          date < fdate)
 
 dat_for <- forecast_samples %>%
-  select(region = id, date, sample, cases = value)
+  select(region = id, date, sample, cases)
 
 convolution_forecast <- regional_secondary(reports = data.table::data.table(dat_obs),
                                            case_forecast = data.table::data.table(dat_for),
