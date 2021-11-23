@@ -120,7 +120,8 @@ tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
   mutate(date_horizon = forecast_from + (7*horizon),
-         horizon = as.numeric(date_horizon - fdate)/7) %>%
+         horizon = as.numeric(date_horizon - fdate)/7,
+         forecast_from = fdate) %>%
   filter(date_horizon %in% fhorizons,
          quantile_label != "upper_0") %>%
   select(-quantile_label)
@@ -163,7 +164,8 @@ arimareg_summary <- forecast_summary(samples = arimareg_samples,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
   mutate(date_horizon = forecast_from + (7*horizon),
-         horizon = as.numeric(date_horizon - fdate)/7) %>%
+         horizon = as.numeric(date_horizon - fdate)/7,
+         forecast_from = fdate) %>%
   filter(date_horizon %in% fhorizons,
          quantile_label != "upper_0") %>%
   select(-quantile_label)
@@ -219,7 +221,8 @@ convolution_summary <- forecast_summary(samples = convolution_samples,
                                               quantiles = c(0.01, 0.025,
                                                             seq(from = 0.05, to = 0.95, by = 0.05),
                                                             0.975, 0.99)) %>%
-  mutate(horizon = as.numeric(date_horizon - fdate)/7) %>%
+  mutate(horizon = as.numeric(date_horizon - fdate)/7,
+         forecast_from = fdate) %>%
   filter(date_horizon %in% fhorizons,
          quantile_label != "upper_0") %>%
   select(-quantile_label)
