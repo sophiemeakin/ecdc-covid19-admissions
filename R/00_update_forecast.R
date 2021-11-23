@@ -34,9 +34,8 @@ dir.create(here::here("data", "latest-forecasts"))
 raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
-                              forecast_date = fdate) %>%
-  # TEMPORARY: keep only locations with no data lag
-  filter(last_rep == max(last_rep))
+                              forecast_date = fdate,
+                              max_trunc = 0)
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
                                        locs = fcast_ids$id)
@@ -44,12 +43,11 @@ raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
 
 # Reshape data ------------------------------------------------------------
 
+# Forecast median (point)
 forecast_point <- raw_case_forecast$point_forecast %>%
-  mutate(forecast_date = fdate,
-         horizon = as.numeric(substr(target, 1, 1)),
-         date = target_end_date - 6) %>%
-  select(id = location, date, cases = value)
+  select(id = location, date = target_end_date, cases = value)
 
+# Forecast samples
 grid <- expand_grid(id = unique(raw_case_forecast$raw_forecast$location),
                     target_date = unique(raw_case_forecast$raw_forecast$target_end_date))
 forecast_samples <- map2_df(.x = grid$id,
@@ -63,10 +61,10 @@ forecast_samples <- map2_df(.x = grid$id,
                               out <- ensemble_samples(dat = dat_in)
                               
                             }) %>%
-  bind_rows()
+  bind_rows() %>%
+  select(id = location, date = target_end_date, sample, cases = value)
 
 dat <- raw_dat %>%
-  filter(week < fdate) %>%
   select(id = location, date = week, cases, adm) %>%
   bind_rows(forecast_point) %>%
   filter(id %in% fcast_ids$id) %>%
@@ -149,7 +147,7 @@ dat_obs <- dat %>%
          date < fdate)
 
 dat_for <- forecast_samples %>%
-  select(region = location, date = target_end_date, sample, cases = value)
+  select(region = id, date, sample, cases = value)
 
 convolution_forecast <- regional_secondary(reports = data.table::data.table(dat_obs),
                                            case_forecast = data.table::data.table(dat_for),
