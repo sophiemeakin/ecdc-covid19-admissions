@@ -30,9 +30,8 @@ fdate <- lubridate::floor_date(lubridate::today(),
 raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
-                              forecast_date = fdate) %>%
-  # TEMPORARY: keep only locations with no data lag
-  filter(last_rep == max(last_rep))
+                              forecast_date = fdate,
+                              max_trunc = 7)
 
 fcast_countries <- raw_dat %>%
   filter(location %in% fcast_ids$id) %>%
