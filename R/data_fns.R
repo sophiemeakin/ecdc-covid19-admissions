@@ -33,7 +33,7 @@ load_jhu_cases <- function(weekly = TRUE, end_date){
     
     out <- out %>%
       mutate(week = lubridate::floor_date(date, unit = "week", week_start = 7),
-             week = as.Date(week)) %>%
+             week = as.Date(week) + 6) %>%
       group_by(location, location_name, week) %>%
       dplyr::summarise(n = n(),
                        cases = sum(cases),
@@ -58,7 +58,6 @@ load_ecdc_hosps <- function(){
   
   out <- dat_raw %>%
     rename(week = date) %>%
-    mutate(week = week + 1) %>%
     select(location_name, location, week, adm)
   
   return(out)

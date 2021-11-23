@@ -7,8 +7,7 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
   plot_obs <- dat_obs %>%
     filter(location %in% regions,
            week >= as.Date(forecast_date) - 8*7,
-           week <= as.Date(forecast_date)) %>%
-    mutate(week = week + 6)
+           week <= as.Date(forecast_date))
   g <- plot_obs %>%
     ggplot(aes(x = week, y = cases)) +
     geom_line() +

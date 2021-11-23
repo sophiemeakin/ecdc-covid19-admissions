@@ -1,27 +1,29 @@
 
 # Get vector of country IDs that we will make admissions forecasts for
-get_forecast_ids <- function(dat, forecast_date) {
+get_forecast_ids <- function(dat, forecast_date, max_trunc = 7) {
   
   # Get last reported week
   last_rep <- raw_dat %>%
     filter(!is.na(adm),
-           week < forecast_date) %>%
+           week <= forecast_date) %>%
     group_by(location) %>%
     filter(week == max(week)) %>%
     ungroup() %>%
     filter(week >= forecast_date - 8*7) %>%
-    select(location, last_rep = week)
+    select(location, last_rep = week) %>%
+    mutate(trunc = as.numeric(forecast_date - last_rep)) %>%
+    filter(trunc <= max_trunc)
   
   # Remove locations missing data in the last 8 weeks
   out <- raw_dat %>%
     left_join(last_rep, by = "location") %>%
     filter(week >= last_rep - 8*7,
            week < last_rep) %>%
-    group_by(location, last_rep) %>%
+    group_by(location, last_rep, trunc) %>%
     summarise(all_adm = sum(adm),
               .groups = "drop") %>% 
     filter(!is.na(all_adm)) %>%
-    select(id = location, last_rep)
+    select(id = location, last_rep, trunc)
   
   return(out)
   
