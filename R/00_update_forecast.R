@@ -179,41 +179,49 @@ format_forecast(forecast_summary = arimareg_summary,
 
 # Case-convolution --------------------------------------------------------
 
-dat_obs <- dat %>%
-  select(region = id, date, primary = cases, secondary = adm) %>%
-  filter(date >= fdate - 12*7,
-         date < fdate)
+convolution_samples <- purrr::map_df(.x = sort(unique(fcast_ids$trunc)),
+              .f = ~ {
+                
+                fdate_int <- unique(fcast_ids$last_rep[which(fcast_ids$trunc == .x)])
+                dat_int <- format_conv_data(obs_dat = dat %>% filter(id %in% fcast_ids$id[which(fcast_ids$trunc == .x)]),
+                                            forecast_dat = forecast_samples %>% filter(id %in% fcast_ids$id[which(fcast_ids$trunc == .x)]),
+                                            cut_date = fdate_int,
+                                            fdate = fdate)
+                
+                convolution_forecast <- regional_secondary(reports = data.table::data.table(dat_int$cc_obs),
+                                                           case_forecast = data.table::data.table(dat_int$cc_forecast),
+                                                           secondary = secondary_opts(type = "incidence"),
+                                                           delays = delay_opts(list(
+                                                             mean = 1, mean_sd = 0.5,
+                                                             sd = 0.5, sd_sd = 0.25, max = 4
+                                                           )),
+                                                           obs = EpiNow2::obs_opts(week_effect = FALSE,
+                                                                                   scale = list(mean = 0.2, sd = 0.1)),
+                                                           burn_in = 2,
+                                                           control = list(adapt_delta = 0.99, max_treedepth = 15),
+                                                           return_fit = FALSE,
+                                                           return_plots = FALSE,
+                                                           verbose = TRUE)
+                
+                out_samples <- convolution_forecast$samples %>%
+                  dplyr::filter(date > fdate_int) %>%
+                  dplyr::mutate(forecast_from = fdate_int,
+                                horizon = as.integer(date - forecast_from),
+                                model = "Case-convolution") %>%
+                  dplyr::select(id = region, sample, horizon, value, forecast_from, model)
+                
+                return(out_samples)
+                
+              }) %>%
+  bind_rows()
 
-dat_for <- forecast_samples %>%
-  select(region = id, date, sample, cases)
-
-convolution_forecast <- regional_secondary(reports = data.table::data.table(dat_obs),
-                                           case_forecast = data.table::data.table(dat_for),
-                                           secondary = secondary_opts(type = "incidence"),
-                                           delays = delay_opts(list(
-                                             mean = 1, mean_sd = 0.5,
-                                             sd = 0.5, sd_sd = 0.25, max = 4
-                                           )),
-                                           obs = EpiNow2::obs_opts(week_effect = FALSE,
-                                                                   scale = list(mean = 0.2, sd = 0.1)),
-                                           burn_in = 2,
-                                           control = list(adapt_delta = 0.99, max_treedepth = 15),
-                                           return_fit = FALSE,
-                                           return_plots = FALSE,
-                                           verbose = TRUE)
-# Model samples and summary
-convolution_samples <- convolution_forecast$samples %>%
-  dplyr::filter(date > fdate) %>%
-  dplyr::mutate(forecast_from = fdate,
-                horizon = as.integer(date - forecast_from),
-                model = "Case-convolution") %>%
-  dplyr::select(id = region, sample, horizon, value, forecast_from, model)
 convolution_summary <- forecast_summary(samples = convolution_samples,
                                               quantiles = c(0.01, 0.025,
                                                             seq(from = 0.05, to = 0.95, by = 0.05),
                                                             0.975, 0.99)) %>%
-  mutate(horizon = horizon/7) %>%
-  filter(quantile_label != "upper_0") %>%
+  mutate(horizon = as.numeric(date_horizon - fdate)/7) %>%
+  filter(date_horizon %in% fhorizons,
+         quantile_label != "upper_0") %>%
   select(-quantile_label)
 
 
