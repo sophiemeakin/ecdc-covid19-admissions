@@ -2,9 +2,10 @@
 
 ## Current forecasts
 
-The most recent forecasts (from 20 November 2021) cover the following
-locations: Belgium (BE), Denmark (DK), Estonia (EE), France (FR), Norway
-(NO), Slovenia (SI), United Kingdom (GB).
+The most recent forecasts (from 27 November 2021) cover the following
+locations: Belgium (BE), Czechia (CZ), Denmark (DK), Estonia (EE),
+France (FR), Greece (GR), Iceland (IS), Ireland (IE), Latvia (LV), Malta
+(MT), Netherlands (NL), Norway (NO), Slovenia (SI), United Kingdom (GB).
 
 ![](README_files/figure-markdown_github/current_forecast-1.png)
 
