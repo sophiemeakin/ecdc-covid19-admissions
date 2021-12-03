@@ -63,7 +63,7 @@ forecast_samples <- map2_df(.x = grid$id,
                                 filter(location == .x,
                                        target_end_date == .y)
                               
-                              out <- ensemble_samples(dat = dat_in)
+                              out <- get_ensemble_samples(dat = dat_in)
                               
                             }) %>%
   bind_rows() %>%

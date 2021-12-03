@@ -30,7 +30,7 @@ get_forecast_ids <- function(dat, forecast_date, max_trunc = 7) {
 }
 
 # Get samples from hub-ensemble quantile forecast
-ensemble_samples <- function(dat, n.samples = 1000){
+get_ensemble_samples <- function(dat, n.samples = 1000){
   
   id_int <- unique(dat$location)
   target_int <- unique(dat$target_end_date)
