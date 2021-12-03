@@ -17,10 +17,7 @@ library(EpiNow2)
 devtools::source_url("https://raw.githubusercontent.com/epiforecasts/covid19-hospital-activity/main/R/forecast_fns.R")
 devtools::source_url("https://raw.githubusercontent.com/seabbs/regional-secondary/master/regional-secondary.R")
 
-source(here::here("R", "data_fns.R"))
-source(here::here("R", "plot_fns.R"))
-source(here::here("R", "format_fns.R"))
-source(here::here("R", "utils.R"))
+devtools::load_all()
 
 if (!dir.exists(here::here("data", "figures"))) {
   dir.create(here::here("data", "figures"))
