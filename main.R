@@ -23,8 +23,11 @@ if (!dir.exists(here::here("data", "figures"))) {
   dir.create(here::here("data", "figures"))
 }
 
-unlink(here::here("data", "latest-forecasts"), recursive = TRUE)
-dir.create(here::here("data", "latest-forecasts"))
+unlink(here::here("data-processed", ""), recursive = TRUE)
+dir.create(here::here("data-processed"))
+dir.create(here::here("data-processed", "epiforecasts-caseconv"))
+dir.create(here::here("data-processed", "epiforecasts-arimareg"))
+dir.create(here::here("data-processed", "epiforecasts-tsensemble"))
 
 # Load data ---------------------------------------------------------------
 
@@ -129,7 +132,7 @@ write_csv(tsensemble_summary,
 
 format_forecast(forecast_summary = tsensemble_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-tsensemble.csv"),
-                file_path = here::here("data", "latest-forecasts"))
+                file_path = here::here("data-processed", "epiforecasts-tsensemble"))
 
 
 # ARIMA regression --------------------------------------------------------
@@ -173,7 +176,7 @@ write_csv(arimareg_summary,
 
 format_forecast(forecast_summary = arimareg_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-arimareg.csv"),
-                file_path = here::here("data", "latest-forecasts"))
+                file_path = here::here("data-processed", "epiforecasts-arimareg"))
 
 
 # Case-convolution --------------------------------------------------------
@@ -231,7 +234,7 @@ write_csv(convolution_summary,
 
 format_forecast(forecast_summary = convolution_summary,
                 file_name = paste0(fdate + 1, "-epiforecasts-caseconv.csv"),
-                file_path = here::here("data", "latest-forecasts"))
+                file_path = here::here("data-processed", "epiforecasts-caseconv"))
 
 
 # Vis model forecasts -----------------------------------------------------
@@ -248,8 +251,7 @@ ggsave(plot = g_admissions,
        height = 9, width = 14, units = "in", dpi = 500)
 
 file.copy(
-  Sys.glob(here::here("data", "latest-forecasts", "*")),
-  here::here("data", "forecasts-format"),
-  recursive = TRUE
+  Sys.glob(here::here("data-processed", "*", "*")),
+  here::here("data", "forecasts-format")
 )
 
