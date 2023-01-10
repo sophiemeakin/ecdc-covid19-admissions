@@ -35,7 +35,7 @@ raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
                               forecast_date = fdate,
-                              max_trunc = 7)
+                              max_trunc = 30)
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
                                        locs = fcast_ids$id)
