@@ -16,6 +16,7 @@ Imports:
   devtools,
   EpiNow2,
   EpiSoon,
+  EuroForecastHub,
   forecastHybrid,
   here, 
   technocolour,
@@ -23,4 +24,5 @@ Imports:
   rmetalog 
 Remotes:
   sophiemeakin/technocolour,
-  epiforecasts/EpiSoon
+  epiforecasts/EpiSoon,
+  covid19-forecast-hub-europe/EuroForecastHub

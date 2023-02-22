@@ -32,8 +32,12 @@ load_jhu_cases <- function(weekly = TRUE, end_date){
   if(weekly){
     
     out <- out %>%
-      mutate(week = lubridate::floor_date(date, unit = "week", week_start = 7),
-             week = as.Date(week) + 6) %>%
+      mutate(week = EuroForecastHub::date_to_week_end(
+        date,
+	config_file = paste0(
+          "https://raw.githubusercontent.com/covid19-forecast-hub-europe/",
+	  "covid19-forecast-hub-europe/main/project-config.json"
+      ))) %>%
       group_by(location, location_name, week) %>%
       dplyr::summarise(n = n(),
                        cases = sum(cases),
@@ -52,12 +56,12 @@ load_jhu_cases <- function(weekly = TRUE, end_date){
 # Load admissions data ----------------------------------------------------
 
 load_ecdc_hosps <- function(){
-  
-  dat_raw <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/ECDC/truth_ECDC-Incident%20Hospitalizations.csv") %>%
+ 
+  dat_raw <- read_csv(file = "https://raw.githubusercontent.com/epiforecasts/covid19-forecast-hub-europe/main/data-truth/OWID/truncated_OWID-Weekly%20Incident%20Hospitalizations.csv") %>%
     rename(adm = value)
   
   out <- dat_raw %>%
-    rename(week = date) %>%
+    rename(week = target_end_date) %>%
     select(location_name, location, week, adm)
   
   return(out)

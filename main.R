@@ -35,7 +35,7 @@ raw_dat <- load_data(end_date = fdate)
 
 fcast_ids <- get_forecast_ids(dat = raw_dat,
                               forecast_date = fdate,
-                              max_trunc = 7)
+                              max_trunc = 30)
 
 raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
                                        locs = fcast_ids$id)
@@ -44,7 +44,7 @@ raw_case_forecast <- load_hub_ensemble(forecast_date = (fdate + 2),
 # Reshape data ------------------------------------------------------------
 
 # Dates of forecast horizons (to allow for truncated data)
-fhorizons <- seq.Date(from = fdate + 7, by = "week", length.out = 4)
+fhorizons <- seq.Date(from = fdate - 2 * 7, to = fdate + 4 * 7, by = "week")
 
 # Observed data
 obs_dat <- raw_dat %>%
@@ -113,15 +113,17 @@ tsensemble_samples <- purrr::map_df(.x = sort(unique(fcast_ids$trunc)),
                 
               }) %>%
   bind_rows() %>%
+  ungroup() %>%
   mutate(model = "Time series ensemble")
 
 tsensemble_summary <- forecast_summary(samples = tsensemble_samples,
                                        quantiles = c(0.01, 0.025,
                                                      seq(from = 0.05, to = 0.95, by = 0.05),
                                                      0.975, 0.99)) %>%
+  ungroup() %>%
   mutate(date_horizon = forecast_from + (7*horizon),
          horizon = as.numeric(date_horizon - fdate)/7,
-         forecast_from = fdate,) %>%
+         forecast_from = fdate) %>%
   filter(date_horizon %in% fhorizons,
          quantile_label != "upper_0") %>%
   select(-quantile_label)

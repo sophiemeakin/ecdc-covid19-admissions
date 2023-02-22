@@ -30,7 +30,8 @@ plot_ensemble <- function(dat_obs, dat_for, forecast_date, regions) {
     filter(location %in% regions,
            quantile %in% c(0.05, 0.25, 0.5, 0.75, 0.95)) %>%
     mutate(quantile = paste0("q", quantile)) %>%
-    pivot_wider(id_cols = -c(quantile, value), names_from = quantile) %>%
+    pivot_wider(id_cols = !any_of(c("quantile", "value")), 
+		names_from = quantile) %>%
     left_join(plot_obs %>% select(contains("location")) %>% unique(),
               by = "location") %>%
     filter(!is.na(location_name))
@@ -94,7 +95,8 @@ plot_forecasts <- function(dat_obs, forecast_date, regions, models) {
     filter(quantile %in% c(0.05, 0.25, 0.5, 0.75, 0.95)) %>%
     mutate(quantile = paste0("q", quantile)) %>%
     rename(location = id) %>%
-    pivot_wider(id_cols = -c(quantile, value), names_from = quantile) %>%
+    pivot_wider(id_cols = !any_of(c("quantile", "value")), 
+		names_from = quantile) %>%
     left_join(plot_obs %>% select(contains("location")) %>% unique(),
               by = "location") %>%
     filter(!is.na(location_name))
